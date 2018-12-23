@@ -1,13 +1,15 @@
 # NaMaster
 
-NaMaster is a C library, Python module and standalone program to compute full-sky angular cross-power spectra of masked, spin-0 and spin-2 fields with an arbitrary number of known contaminants using a pseudo-Cl (aka MASTER) approach. The code also implements B-mode purification and is available in both full-sky and flat-sky modes.
+NaMaster is a C library, Python module and standalone program to compute full-sky angular cross-power spectra of masked, spin-0 and spin-2 fields with an arbitrary number of known contaminants using a pseudo-Cl (aka MASTER) approach. The code also implements E/B-mode purification and is available in both full-sky and flat-sky modes.
 
 
 ## Installation
 NaMaster has the following dependencies, which should be present in your system before you can install the code:
-* [GSL](https://www.gnu.org/software/gsl/)
-* [FFTW](http://www.fftw.org/)
+* [GSL](https://www.gnu.org/software/gsl/). Version 2 required.
+* [FFTW](http://www.fftw.org/). Version 3 required. Install with `--enable-openmp`.
 * [libsharp](https://github.com/Libsharp/libsharp) (see instructions in [NERSC_installation.md](NERSC_installation.md) for more details on how to install libsharp).
+* [cfitsio](https://heasarc.gsfc.nasa.gov/fitsio/). Any version >3 should work.
+* [HEALPix](https://sourceforge.net/projects/healpix/). Any version >2 should work. You only need to install the C libraries.
 
 ### 1- C library
 First, install the C library `libnmt`. In UNIX, in the simplest case, this should be a matter of running
@@ -45,7 +47,7 @@ where the optional `--user` flag can be used if you don't have admin privileges.
 
 You can check that the python installation works by running the unit tests:
 ```
-python -m unittest -v
+python -m unittest discover -v
 ```
 Note that the `test` directory, containing all unit tests, also contains all the sample python scripts described in the documentation (see below).
 
@@ -60,6 +62,6 @@ The following sources of documentation are available for users:
 ## Licensing, credits and feedback
 You are welcome to re-use the code, which is open source and freely available under terms consistent with BSD 3-Clause licensing (see [LICENSE](LICENSE)).
 
-If you use NaMaster for any scientific publication, we kindly ask you to cite this github repository and the companion paper TBD.
+If you use NaMaster for any scientific publication, we kindly ask you to cite this github repository and the companion paper https://arxiv.org/abs/1809.09603.
 
 For feedback, please contact the author via github issues or emaild (david.alonso@physics.ox.ac.uk).

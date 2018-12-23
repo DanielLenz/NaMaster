@@ -7,7 +7,7 @@ rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 rc('text', usetex=True)
 
 nsims=1000
-prefix_clean="tests_flat/run_pure01_cont0"
+prefix_clean="tests_flatb/run_pure01_cont0"
 
 def tickfs(ax,x=True,y=True) :
     if x :
@@ -23,14 +23,14 @@ def read_cls(fname) :
 l_th,clEE_th,clEB_th,clBE_th,clBB_th=read_cls(prefix_clean+"_cl_th.txt")
 ndof=len(l_th)
 
-print "Reading"
+print("Reading")
 clEE_clean=[]; clEB_clean=[]; clBB_clean=[];
 for i in np.arange(nsims) :
     ll,ccee,cceb,ccbe,ccbb=read_cls(prefix_clean+"_cl_%04d.txt"%(i+1))
     clEE_clean.append(ccee); clEB_clean.append(cceb); clBB_clean.append(ccbb);
 clEE_clean=np.array(clEE_clean); clEB_clean=np.array(clEB_clean); clBB_clean=np.array(clBB_clean); 
 
-print "Computing statistics"
+print("Computing statistics")
 hartfac=(nsims-ndof-2.)/(nsims-1.)
 def compute_stats(y,y_th) :
     mean=np.mean(y,axis=0)
@@ -71,12 +71,12 @@ cols=plt.cm.rainbow(np.linspace(0,1,3))
 fig=plt.figure()
 ax=fig.add_axes((0.12,0.3,0.78,0.6))
 ic=0
-ax.plot(l_th,clEE_clean_mean,label='$EE$',c=cols[ic])
+ax.plot(l_th,clEE_clean_mean,label='$EE$',c=cols[ic],alpha=0.5)
 ax.plot(l_th,clEE_th,'--',c=cols[ic]);
 ic+=1
-ax.plot(l_th,clEB_clean_mean,label='$EB$',c=cols[ic]);
+ax.plot(l_th,clEB_clean_mean,label='$EB$',c=cols[ic],alpha=0.5)
 ic+=1
-ax.plot(l_th,clBB_clean_mean,label='$BB$',c=cols[ic]);
+ax.plot(l_th,clBB_clean_mean,label='$BB$',c=cols[ic],alpha=0.5)
 ax.plot(l_th,clBB_th,'--',c=cols[ic]);
 ic+=1
 ax.plot([-1,-1],[-1,-1],'k-' ,label='${\\rm Sims}$')

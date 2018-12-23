@@ -1,14 +1,16 @@
+import data.flatmaps as fm
+import pymaster as nmt
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.stats as st
+import scipy.stats as stat
 from matplotlib import rc
 import matplotlib
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 rc('text', usetex=True)
 
 nsims=1000
-prefix_clean="tests_flat/run_mask1_cont1_apo0.00"
-prefix_dirty="tests_flat/run_mask1_cont1_apo0.00_no_deproj"
+prefix_clean="tests_flatb/run_mask1_cont1_apo0.00"
+prefix_dirty="tests_flatb/run_mask1_cont1_apo0.00_no_deproj"
 
 def tickfs(ax,x=True,y=True) :
     if x :
@@ -24,7 +26,36 @@ def read_cls(fname) :
 l_th,clTT_th,clTE_th,clTB_th,clEE_th,clEB_th,clBE_th,clBB_th=read_cls(prefix_clean+"_cl_th.txt")
 ndof=len(l_th)
 
-print "Reading"
+print("Plotting contamination figure")
+l,cltt,clee,clbb,clte,nltt,nlee,nlbb,nlte=np.loadtxt("data/cls_lss.txt",unpack=True)    
+cltt[0]=0; clee[0]=0; clbb[0]=0; clte[0]=0;
+nltt[0]=0; nlee[0]=0; nlbb[0]=0; nlte[0]=0;
+fmi,mask_hsc=fm.read_flat_map("data/mask_lss_flat.fits")
+dum,fgt=fm.read_flat_map("data/cont_lss_dust_flat.fits") #Dust
+st,sq,su=nmt.synfast_flat(int(fmi.nx),int(fmi.ny),fmi.lx_rad,fmi.ly_rad,
+                          [cltt+nltt,clte+nlte,0*cltt,clee+nlee,0*clee,clbb+nlbb],[0,2])
+mask_hsc[:]=1
+ff0=nmt.NmtFieldFlat(fmi.lx_rad,fmi.ly_rad,mask_hsc.reshape([fmi.ny,fmi.nx]),
+                     [st+fgt.reshape([fmi.ny,fmi.nx])],
+                     templates=fgt.reshape([1,1,fmi.ny,fmi.nx]))
+plt.figure(figsize=(12,4.75))
+fs_or=matplotlib.rcParams['font.size']
+ax=plt.subplot(221,projection=fmi.wcs);
+fmi.view_map(st.flatten(),ax=ax,addColorbar=False,title='Signal',
+             colorMin=np.amin(st),colorMax=np.amax(st))
+ax=plt.subplot(222,projection=fmi.wcs);
+fmi.view_map(4*fgt,ax=ax,addColorbar=False,title='Contaminant',
+             colorMin=np.amin(st),colorMax=np.amax(st))
+ax=plt.subplot(223,projection=fmi.wcs);
+fmi.view_map(st.flatten()+4*fgt,ax=ax,addColorbar=False,title='Contaminated map',
+             colorMin=np.amin(st),colorMax=np.amax(st))
+ax=plt.subplot(224,projection=fmi.wcs);
+fmi.view_map(ff0.get_maps().flatten(),ax=ax,addColorbar=False,title='Cleaned map',
+             colorMin=np.amin(st),colorMax=np.amax(st))
+plt.savefig("plots_paper/maps_contamination.pdf",bbox_inches='tight')
+plt.show()
+
+print("Reading")
 clTT_clean=[]; clTE_clean=[]; clTB_clean=[]; clEE_clean=[]; clEB_clean=[]; clBB_clean=[];
 clTT_dirty=[]; clTE_dirty=[]; clTB_dirty=[]; clEE_dirty=[]; clEB_dirty=[]; clBB_dirty=[];
 for i in np.arange(nsims) :
@@ -39,7 +70,7 @@ clEE_clean=np.array(clEE_clean); clEB_clean=np.array(clEB_clean); clBB_clean=np.
 clTT_dirty=np.array(clTT_dirty); clTE_dirty=np.array(clTE_dirty); clTB_dirty=np.array(clTB_dirty); 
 clEE_dirty=np.array(clEE_dirty); clEB_dirty=np.array(clEB_dirty); clBB_dirty=np.array(clBB_dirty);
 
-print "Computing statistics"
+print("Computing statistics")
 def compute_stats(y,y_th) :
     mean=np.mean(y,axis=0)
     cov=np.mean(y[:,:,None]*y[:,None,:],axis=0)-mean[:,None]*mean[None,:]
@@ -67,7 +98,7 @@ m,cov,icov,chi2r,chi2all=compute_stats(np.vstack((clTT_clean.T,clTE_clean.T,clTB
                                                   clEE_clean.T,clEB_clean.T,clBB_clean.T)).T,
                                        np.vstack((clTT_th,clTE_th,clTB_th,
                                                   clEE_th,clEB_th,clBB_th)).flatten())
-print(chi2r,len(m),1-st.chi2.cdf(chi2r,len(m)))
+print(chi2r,len(m),1-stat.chi2.cdf(chi2r,len(m)))
 
 #Plot covariance
 plt.figure();
@@ -95,32 +126,32 @@ plot_dirty=False
 fig=plt.figure()
 ax=fig.add_axes((0.12,0.3,0.78,0.6))
 ic=0
-ax.plot(l_th,clTT_clean_mean,label='$\\delta\\times\\delta$',c=cols[ic])
+ax.plot(l_th,clTT_clean_mean,label='$\\delta\\times\\delta$',c=cols[ic],alpha=0.5)
 if plot_dirty : 
    ax.plot(l_th,clTT_dirty_mean,'-.',c=cols[ic]);
 ax.plot(l_th,clTT_th,'--',c=cols[ic]);
 ic+=1
-ax.plot(l_th,clTE_clean_mean,label='$\\delta\\times\\gamma_E$',c=cols[ic])
+ax.plot(l_th,clTE_clean_mean,label='$\\delta\\times\\gamma_E$',c=cols[ic],alpha=0.5)
 if plot_dirty :
     ax.plot(l_th,clTE_dirty_mean,'-.',c=cols[ic]);
 ax.plot(l_th,clTE_th,'--',c=cols[ic]);
 ic+=1
-ax.plot(l_th,clTB_clean_mean,label='$\\delta\\times\\gamma_B$',c=cols[ic]);
+ax.plot(l_th,clTB_clean_mean,label='$\\delta\\times\\gamma_B$',c=cols[ic],alpha=0.5)
 if plot_dirty :
     ax.plot(l_th,clTB_dirty_mean,'-.',c=cols[ic]);
 else :
     ax.plot([-1,-1],[-1,-1],'k-' ,label='${\\rm Sims}$')
 ic+=1
-ax.plot(l_th,clEE_clean_mean,label='$\\gamma_E\\times\\gamma_E$',c=cols[ic])
+ax.plot(l_th,clEE_clean_mean,label='$\\gamma_E\\times\\gamma_E$',c=cols[ic],alpha=0.5)
 if plot_dirty :
     ax.plot(l_th,clEE_dirty_mean,'-.',c=cols[ic]);
 ax.plot(l_th,clEE_th,'--',c=cols[ic]);
 ic+=1
-ax.plot(l_th,clEB_clean_mean,label='$\\gamma_E\\times\\gamma_B$',c=cols[ic]);
+ax.plot(l_th,clEB_clean_mean,label='$\\gamma_E\\times\\gamma_B$',c=cols[ic],alpha=0.5)
 if plot_dirty :
     ax.plot(l_th,clEB_dirty_mean,'-.',c=cols[ic]);
 ic+=1
-ax.plot(l_th,clBB_clean_mean,label='$\\gamma_B\\times\\gamma_B$',c=cols[ic]);
+ax.plot(l_th,clBB_clean_mean,label='$\\gamma_B\\times\\gamma_B$',c=cols[ic],alpha=0.5)
 if plot_dirty :
     ax.plot(l_th,clBB_dirty_mean,'-.',c=cols[ic]);
 ic+=1
@@ -165,7 +196,7 @@ plt.savefig("plots_paper/val_cl_lss_flat.pdf",bbox_inches='tight')
 #Plot chi2 dist
 xr=[ndof-5*np.sqrt(2.*ndof),ndof+5*np.sqrt(2*ndof)]
 x=np.linspace(xr[0],xr[1],256)
-pdf=st.chi2.pdf(x,ndof)
+pdf=stat.chi2.pdf(x,ndof)
 
 plt.figure(figsize=(10,7))
 ax=[plt.subplot(2,3,i+1) for i in range(6)]
@@ -175,34 +206,34 @@ h,b,p=ax[0].hist(clTT_clean_chi2all,bins=40,density=True,range=xr)
 ax[0].text(0.7,0.9,'$\\delta\\times\\delta$'    ,transform=ax[0].transAxes,fontsize=14)
 ax[0].set_ylabel('$P(\\chi^2)$',fontsize=15)
 ax[0].plot([clTT_clean_chi2r,clTT_clean_chi2r],[0,1.4*np.amax(pdf)],'k-.')
-print('TT : %.3lE %.3lE'%(1-st.chi2.cdf(clTT_clean_chi2r,ndof),1-st.chi2.cdf(clTT_dirty_chi2r,ndof)))
+print('TT : %.3lE %.3lE'%(1-stat.chi2.cdf(clTT_clean_chi2r,ndof),1-stat.chi2.cdf(clTT_dirty_chi2r,ndof)))
 
 h,b,p=ax[1].hist(clTE_clean_chi2all,bins=40,density=True,range=xr)
 ax[1].text(0.7,0.9,'$\\delta\\times\\gamma_E$'  ,transform=ax[1].transAxes,fontsize=14)
 ax[1].plot([clTE_clean_chi2r,clTE_clean_chi2r],[0,1.4*np.amax(pdf)],'k-.')
-print('TE : %.3lE %.3lE'%(1-st.chi2.cdf(clTE_clean_chi2r,ndof),1-st.chi2.cdf(clTE_dirty_chi2r,ndof)))
+print('TE : %.3lE %.3lE'%(1-stat.chi2.cdf(clTE_clean_chi2r,ndof),1-stat.chi2.cdf(clTE_dirty_chi2r,ndof)))
 
 h,b,p=ax[2].hist(clTB_clean_chi2all,bins=40,density=True,range=xr)
 ax[2].text(0.7,0.9,'$\\delta\\times\\gamma_B$'  ,transform=ax[2].transAxes,fontsize=14)
 ax[2].plot([clTB_clean_chi2r,clTB_clean_chi2r],[0,1.4*np.amax(pdf)],'k-.')
-print('TB : %.3lE %.3lE'%(1-st.chi2.cdf(clTB_clean_chi2r,ndof),1-st.chi2.cdf(clTB_dirty_chi2r,ndof)))
+print('TB : %.3lE %.3lE'%(1-stat.chi2.cdf(clTB_clean_chi2r,ndof),1-stat.chi2.cdf(clTB_dirty_chi2r,ndof)))
 
 h,b,p=ax[3].hist(clEE_clean_chi2all,bins=40,density=True,range=xr)
 ax[3].text(0.7,0.9,'$\\gamma_E\\times\\gamma_E$',transform=ax[3].transAxes,fontsize=14)
 ax[3].plot([clEE_clean_chi2r,clEE_clean_chi2r],[0,1.4*np.amax(pdf)],'k-.')
 ax[3].set_xlabel('$\\chi^2$',fontsize=15)
 ax[3].set_ylabel('$P(\\chi^2)$',fontsize=15)
-print('EE : %.3lE %.3lE'%(1-st.chi2.cdf(clEE_clean_chi2r,ndof),1-st.chi2.cdf(clEE_dirty_chi2r,ndof)))
+print('EE : %.3lE %.3lE'%(1-stat.chi2.cdf(clEE_clean_chi2r,ndof),1-stat.chi2.cdf(clEE_dirty_chi2r,ndof)))
 
 h,b,p=ax[4].hist(clEB_clean_chi2all,bins=40,density=True,range=xr)
 ax[4].text(0.7,0.9,'$\\gamma_E\\times\\gamma_B$',transform=ax[4].transAxes,fontsize=14)
 ax[4].plot([clEB_clean_chi2r,clEB_clean_chi2r],[0,1.4*np.amax(pdf)],'k-.')
-print('EB : %.3lE %.3lE'%(1-st.chi2.cdf(clEB_clean_chi2r,ndof),1-st.chi2.cdf(clEB_dirty_chi2r,ndof)))
+print('EB : %.3lE %.3lE'%(1-stat.chi2.cdf(clEB_clean_chi2r,ndof),1-stat.chi2.cdf(clEB_dirty_chi2r,ndof)))
 
 h,b,p=ax[5].hist(clBB_clean_chi2all,bins=40,density=True,range=xr)
 ax[5].text(0.7,0.9,'$\\gamma_B\\times\\gamma_B$',transform=ax[5].transAxes,fontsize=14)
 ax[5].plot([clBB_clean_chi2r,clBB_clean_chi2r],[0,1.4*np.amax(pdf)],'k-.')
-print('BB : %.3lE %.3lE'%(1-st.chi2.cdf(clBB_clean_chi2r,ndof),1-st.chi2.cdf(clBB_dirty_chi2r,ndof)))
+print('BB : %.3lE %.3lE'%(1-stat.chi2.cdf(clBB_clean_chi2r,ndof),1-stat.chi2.cdf(clBB_dirty_chi2r,ndof)))
 
 for a in ax[:3] :
     a.set_xticklabels([])
